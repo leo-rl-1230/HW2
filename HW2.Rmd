@@ -1,0 +1,258 @@
+---
+title: "HW2"
+author: "Leonardo Robles-Lara (lr34388)"
+date: "2024-01-30"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3 
+    toc_float:
+      collapsed: true
+---
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,      # Display code in output
+  message = FALSE,  # Suppress messages in output
+  warning = FALSE   # Suppress warnings in output
+)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+profs_data <- read.csv("profs.csv")
+bikes_data <- read.csv("bikeshare.csv")
+metro_data <- read.csv("capmetro_UT.csv")
+billboard_data <- read.csv("billboard.csv")  
+```
+
+
+# **Question 1**
+
+## Part 1
+
+```{r}
+ggplot(data = profs_data, aes(x = eval)) +
+  geom_histogram(bins = 25, binwidth = 0.1, fill = "purple", color = "black") +
+  labs(title = "Distribution of Evaluations on Professors", x = "Evaluation Rating", y = "Count") +
+  theme_minimal() +
+  xlim(1, 5) +
+  ylim(0, 40)
+
+```
+
+This is a distribution of the evaluations given to teachers and the amount of each. The histogram is split into bins of 0.1 in order to specifically seperate each possible star rating. The mode of the histogram is 4 as seen on the graph. The graph is also skewed to the right.
+
+
+## Part 2
+
+```{r}
+ggplot(data = profs_data, aes(x = eval, fill = native)) +
+  geom_boxplot(color = "black") +
+  facet_wrap(~native, scales = "free_y") +
+  labs(title = "Evaluations on Professors Based on Native Speakers of English", x = "Evaluation Rating", y = "Value") +
+  theme_minimal() +
+  theme(panel.spacing = unit(2, "lines")) +  
+  coord_flip()
+
+```
+
+The graphs above display the descrepency in average rating for teachers who are native english speakers versus those who are not. The red graph represents the non-native english speakers. The graph shows that the average rating for a teacher lies between 3.5 and 3.75. The blue graph represents native english speakers. Their rating on average demonstrated by the bold line in the middle of the box lies at a 4. This allows us to conclude that native english speakers in this data set tend to have a higher rating on average. While that is true, there are more outiers overall on the side of the native speakers. This can be seen by the dots below the box.
+
+
+
+## Part 3
+
+```{r}
+ggplot(data = profs_data, aes(x = eval, fill = gender)) +
+  geom_histogram(bins = 25, binwidth = 0.1, color = "black") +
+  labs(title = "Distribution of Evaluations on Professors", x = "Evaluation Rating", y = "Count") +
+  theme_minimal() +
+  facet_wrap(~gender) +
+  xlim(1, 5) +
+  ylim(0, 25)
+
+```
+
+This faceted histogram demonstrates the difference in ratings via gender. The graphs show that there is overall more male teachers in this dataset and subsequently more higher ratings in favor of the male teachers. Both graphs have a skew to the right. While the graphs allow us to seperate the genders into two different graphs there is not much evidence that can be deduced proportionally to compare most efficiently.
+
+
+## Part 4
+
+```{r}
+ggplot(data = profs_data, aes(x = beauty, y = eval)) +
+  geom_point(shape = 1, size = 2, color = "black") +
+  labs(title = "Evaluation of Professors in Comparison to Beauty", x = "Beauty Scale", y = "Evaluation of Professors") +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  theme_minimal()
+```
+
+
+In this scatterplot the beauty of professors was compared directly with their evaluation rating to test correlation. The blue line demonstrates the correlation of the given relationship. The correlation of the relationhip is `r cor(profs_data$beauty, profs_data$eval)` which indicates a weak positive correlation. This weak positive connection implies that the beauty of a professor is not a overwhelming factor in the evaluation score.
+
+# **Question 2**
+
+## Part 1
+
+```{r}
+bikes_data %>%
+  group_by(hr) %>%
+  mutate(avg_riders = round(mean(total, na.rm = TRUE))) %>%
+  ggplot(aes(x = hr, y = avg_riders)) +
+  geom_line() +
+  labs(title = "Average Bike Rentals by Hour of the Day",
+       x = "Hour of the Day",
+       y = "Average Ridership") +
+  theme_minimal()
+
+```
+
+Through the deduction of this line graph we can see two main spikes in the graph at hours 9am/Hour-9 and ramping up as it strikes 5pm/Hour-17. We also see a min and max value with the highest point at a certain point at hour 16-18 and a min within Hour 3-5. This information tells us that work hours are when bikes are used the most and the early morning prior to 5 is when bikes are used the least.
+
+## Part 2
+
+```{r}
+bikes_data %>%
+  group_by(hr, workingday) %>%
+  summarise(avg_riders = mean(total, na.rm = TRUE)) %>%
+  ggplot(aes(x = hr, y = avg_riders, group = workingday, color = factor(workingday))) +
+  geom_line() +
+  facet_wrap(~workingday, scales = "free_y") +
+  labs(title = "Average Bike Rentals by Hour of the Day",
+       x = "Hour of the Day",
+       y = "Average Ridership") +
+  theme_minimal()
+
+
+```
+
+These graphs allow us to compare the average biking usages whether it is a working day or not over the course of the day. The graphs have a pattern almost contradicting one another with each graph peaking whilst the other reaches a lower amount. For instance, at hour 10 when working days reach a low after the initial spike, non-working days are erupting in a positive direction. The single thing that remains the same from the previous graph is that both graphs have their lowest values prior to hour 5.
+
+
+
+## Part 3
+
+```{r}
+bikes_data %>%
+  filter(hr == 9) %>%
+  group_by(weathersit, workingday) %>%
+  summarise(avg_riders = mean(total, na.rm = TRUE)) %>%
+  ggplot(aes(x = weathersit, y = avg_riders, fill = factor(weathersit))) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~workingday, labeller = labeller(workingday = c("0" = "Non-Working Day", "1" = "Working Day"))) + 
+  labs(title = "Average Ridership at 9 AM by Weather Situation",
+       x = "Weather Situation",
+       y = "Average Ridership") +
+  theme_minimal() +
+  scale_fill_discrete(name = "Weather Situation") +
+  ylim(0,275)
+
+```
+
+These graphs allow the comparison of whether weather affects the average amount of bike riders. The graphs are facteted by working and non-working days and this does affect the counts for all 3 weather conditions. The trend for non-working days is that as the weather condition worsen the lower the average bikers there were. Whereas on working days the average bikers do not deteriorate much in numbers until the more severe weather labled as 3. There is also just more riders on workdays.
+
+
+# **Question 3**
+
+```{r}
+capmetro_UT = mutate(metro_data,
+                     day_of_week = factor(day_of_week,
+                                          levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+                     month = factor(month,
+                                    levels=c("Sep", "Oct","Nov")))
+```
+
+## Part 1
+
+```{r}
+capmetro_UT %>%
+  group_by(month, hour_of_day, day_of_week) %>%
+  summarise(avg_boards = mean(boarding, na.rm = TRUE)) %>%
+  ggplot(aes(x = hour_of_day, y = avg_boards, color = factor(month))) +
+  geom_line() +
+  labs(title = "Average Boardings by Hour of the Day",
+       x = "Hour of the Day",
+       y = "Average Boardings") +
+  
+  theme_minimal() +
+  facet_wrap(~day_of_week)
+
+```
+
+The graphs give insight to which day of the week have the average boardings per month. The graphs gives gives valuable information as to the fact that the weekdays are much higher in boarding traffic while the weekends are very low throughout the day. The weekdays and weekends when compared directly to each other vary relatively little and even when comparing the different months within each day they differ quite lightly.
+
+
+## Part 2
+
+```{r}
+capmetro_UT %>%
+  ggplot(aes(x = temperature, y = boarding, color = factor(weekend))) +
+  geom_point() +
+  labs(title = "Average Boardings by Hour of the Day",
+       x = "Temperature",
+       y = "Average Boardings",
+       color = "Weekend Variable") +
+  theme_minimal() +
+  facet_wrap(~hour_of_day) +
+  scale_color_manual(values = c("weekday" = "red", "weekend" = "blue")) + 
+  theme(legend.position = "top")
+
+```
+
+This collection of graphs gives us a lot of information over the specific distribution of boardings given a specfic day of the month. The colors on the graphs which are red and blue also represent weekends and weekdays. The data shows us that on weekdays for most of the days, the boarding distrubution is higher than that of weekends.
+
+
+# **Question 4**
+
+## Part 1
+
+```{r}
+topsongs <- billboard_data %>%
+  group_by(performer, song) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# Display the top 10 rows using kable
+kable(head(topsongs, 10), format = "html", caption = "Top 10 Longest Charting Songs")
+
+```
+
+This list gives us the songs that charted the longest from the years 1958 to 2021. The song that was on the charts the longest was Radioative by Imagine Dragons which was on the charts for 87 weeks. Each of the top 10 artists are different with no artist showing up multiple times.
+
+## Part 2
+
+```{r}
+billboard_data %>%
+  filter(year != 1958 | year != 2021) %>%
+  group_by(year) %>%
+  summarise(unique_count = n_distinct(song)) %>%
+  ggplot(aes(x = year, y = unique_count)) +
+  geom_line() +
+  labs(title = "Unique Song Count in 1958 and 2021",
+       x = "Year",
+       y = "Unique Song Count") + 
+  xlim(1959, 2020)
+
+```
+
+This line graph allows for us to see the diversity in music over the span of 60 years. The trend that can be seen is that since the late 60s music diversity had been on the decline until the early 2000s with a sharp increase since then. While the peak is still back in the 1960s it is being challeneged by the modern day. 
+
+## Part 3
+
+```{r}
+billboard_data %>%
+  filter(weeks_on_chart > 10) %>%
+  group_by(performer) %>%
+  summarise(numofsongs = n_distinct(song)) %>%
+  arrange(desc(numofsongs)) %>%
+  head(19) %>%
+  ggplot(aes(x = performer, y = numofsongs)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "Top 19 Performers with More than 10 Weeks on Chart",
+       x = "Performer",
+       y = "Number of Songs") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+The bar graph shows the 19 artists in the list that have had at least 30 songs chart for 10 weeks or more. The artist that has had the most "10 week hits" is Elton John. 
